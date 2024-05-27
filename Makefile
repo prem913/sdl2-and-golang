@@ -1,11 +1,11 @@
-buildp:
+buildpong:
 	@go build -o bin/pong ./cmd/pong
-
-buildw:
-	@GOOS=windows GOARCH=386 go build -o bin/pong-windows ./cmd/pong
-
-run: build
+buildgol:
+	@go build -o bin/gameoflife ./cmd/gameoflife
+runpong: buildpong
 	@./bin/pong
+rungol: buildgol
+	@go build -o bin/gameoflife ./gameoflife/main.go
 
 test:
 	@go test ./... -v
