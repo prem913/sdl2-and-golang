@@ -6,6 +6,8 @@ runpong: buildpong
 	@./bin/pong
 rungol: buildgol
 	@go build -o bin/gameoflife ./gameoflife/main.go
+runspi:
+	@go run ./cmd/spaceinvaders/main.go
 
 test:
 	@go test ./... -v

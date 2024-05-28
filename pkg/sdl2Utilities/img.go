@@ -1,6 +1,7 @@
 package sdl2utilities
 
 import (
+	"fmt"
 	"image"
 	"image/png"
 	"os"
@@ -58,4 +59,60 @@ func LoadImageTexture(imgPath string) (*Texture, error) {
 		}
 	}
 	return &Texture{pixels, w, h, w * 4}, nil
+}
+
+func SwapPixel(pix []byte, indexL, indexR int) {
+	temp := pix[indexL]
+	pix[indexL] = pix[indexR]
+	pix[indexR] = temp
+
+	indexL++
+	indexR++
+
+	temp = pix[indexL]
+	pix[indexL] = pix[indexR]
+	pix[indexR] = temp
+
+	indexL++
+	indexR++
+
+	temp = pix[indexL]
+	pix[indexL] = pix[indexR]
+	pix[indexR] = temp
+
+	indexL++
+	indexR++
+
+	temp = pix[indexL]
+	pix[indexL] = pix[indexR]
+	pix[indexR] = temp
+
+}
+
+func (t *Texture) FlipY() {
+	fmt.Println("flipy")
+
+	for x := 0; x < t.W/2; x++ {
+		for y := 0; y < t.H; y++ {
+			indexL := (y * t.Pitch) + x*4
+			indexR := (y * t.Pitch) + (t.W-x-1)*4
+
+			SwapPixel(t.Pixels, indexL, indexR)
+
+		}
+	}
+
+}
+
+func (t *Texture) FlipX() {
+	for y := 0; y < t.H/2; y++ {
+		for x := 0; x < t.W; x++ {
+			indexL := (y * t.Pitch) + x*4
+			indexR := ((t.H - y - 1) * t.Pitch) + x*4
+
+			SwapPixel(t.Pixels, indexL, indexR)
+
+		}
+	}
+
 }
