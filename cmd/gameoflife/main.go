@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math/rand/v2"
 
-	sdl2utilities "github.com/prem913/gl_go/pkg/sdl2Utilities"
+	"github.com/prem913/gl_go/pkg/gls"
 	"github.com/veandco/go-sdl2/sdl"
 )
 
@@ -27,14 +27,14 @@ func setPixel(x, y, w int, pix []byte, value byte) {
 	pix[index+3] = value
 }
 
-func randomBorn(s *sdl2utilities.Texture) {
+func randomBorn(s *gls.Texture) {
 	for i := 0; i < 1000; i++ {
 		setPixel(rand.IntN(s.W), rand.IntN(s.H), s.W, s.Pixels, 255)
 	}
 
 }
 
-func universe(w, h int) *sdl2utilities.Texture {
+func universe(w, h int) *gls.Texture {
 	pix := make([]byte, w*h*4)
 
 	for y := 0; y < w; y++ {
@@ -51,13 +51,13 @@ func universe(w, h int) *sdl2utilities.Texture {
 			pix[index+3] = live
 		}
 	}
-	return sdl2utilities.NewTexture(w, h, w*4, pix)
+	return gls.NewTexture(w, h, w*4, pix)
 }
 
 var dirX [8]int = [8]int{0, 0, 1, -1, -1, -1, 1, 1}
 var dirY [8]int = [8]int{-1, 1, 0, 0, -1, 1, -1, 1}
 
-func tick(tex *sdl2utilities.Texture) {
+func tick(tex *gls.Texture) {
 	generation++
 	LiveCells = 0
 	DeadCells = 0
@@ -123,8 +123,8 @@ func tick(tex *sdl2utilities.Texture) {
 }
 
 func main() {
-	var s sdl2utilities.SDL
-	s.Init_Sdl(WindWidth, WinHeight)
+	var s gls.SDL
+  s.Init_Sdl(WindWidth, WinHeight,"Game of life")
 	uni := universe(400, 400)
 	keyState := sdl.GetKeyboardState()
 
@@ -141,6 +141,6 @@ func main() {
 
 }
 
-func getCenter() sdl2utilities.Pos {
-	return sdl2utilities.Pos{X: float32(WindWidth) / 2, Y: float32(WinHeight) / 2}
+func getCenter() gls.Pos {
+	return gls.Pos{X: float32(WindWidth) / 2, Y: float32(WinHeight) / 2}
 }

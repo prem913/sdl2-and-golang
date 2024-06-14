@@ -1,4 +1,4 @@
-package sdl2utilities
+package gls
 
 // Function to create the 15x15 scaled bitmap from the 5x3 bitmap
 func createTextureBitmap(numberBitmap []string) [15][15]int {

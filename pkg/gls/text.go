@@ -1,4 +1,4 @@
-package sdl2utilities
+package gls
 
 var CharMap = NumberToTextureByteArray()
 

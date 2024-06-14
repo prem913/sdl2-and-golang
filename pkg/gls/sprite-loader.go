@@ -1,4 +1,4 @@
-package sdl2utilities
+package gls
 
 // takes Image Path and a map with sprite position data in the order [x,y,w,h]
 // return map with same names along with textures

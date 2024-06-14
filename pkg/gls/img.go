@@ -1,4 +1,4 @@
-package sdl2utilities
+package gls
 
 import (
 	"fmt"
@@ -114,5 +114,4 @@ func (t *Texture) FlipX() {
 
 		}
 	}
-
 }

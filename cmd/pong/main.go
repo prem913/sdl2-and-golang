@@ -5,7 +5,7 @@ import (
 	"math"
 	"time"
 
-	sdl2utilities "github.com/prem913/gl_go/pkg/sdl2Utilities"
+	gls "github.com/prem913/gl_go/pkg/gls"
 	"github.com/veandco/go-sdl2/sdl"
 )
 
@@ -34,14 +34,13 @@ var highScore int = 32
 var curScore float32 = 0
 
 // Game Objects
-var numTextures = sdl2utilities.NumberToTextureByteArray()
+var numTextures = gls.NumberToTextureByteArray()
 
-func DrawText(str string, pos sdl2utilities.Pos, s *sdl2utilities.SDL, digitSpace float32) {
+func DrawText(str string, pos gls.Pos, s *gls.SDL, digitSpace float32) {
 	curPos := pos
 	for _, i := range str {
 		if i == '#' {
 			curPos.X = pos.X
-			curPos.Y += 15 + digitSpace
 			continue
 		}
 		curPos.X += 15 + digitSpace
@@ -55,12 +54,12 @@ func DrawText(str string, pos sdl2utilities.Pos, s *sdl2utilities.SDL, digitSpac
 }
 
 type Paddle struct {
-	sdl2utilities.Pos
-	tex   *sdl2utilities.Texture
+	gls.Pos
+	tex   *gls.Texture
 	speed float32
 }
 
-func NewPaddle(x, y, speed float32, w, h int, color *sdl2utilities.Color) *Paddle {
+func NewPaddle(x, y, speed float32, w, h int, color *gls.Color) *Paddle {
 	pix := make([]byte, w*h*4)
 	pitch := w * 4
 	for y := 0; y < h; y++ {
@@ -69,9 +68,9 @@ func NewPaddle(x, y, speed float32, w, h int, color *sdl2utilities.Color) *Paddl
 			pix[index], pix[index+1], pix[index+2], pix[index+3] = color.RGBA()
 		}
 	}
-	tex := sdl2utilities.NewTexture(w, h, pitch, pix)
+	tex := gls.NewTexture(w, h, pitch, pix)
 	return &Paddle{
-		Pos:   sdl2utilities.Pos{X: x, Y: y},
+		Pos:   gls.Pos{X: x, Y: y},
 		speed: speed,
 		tex:   tex,
 	}
@@ -102,11 +101,11 @@ func (p *Paddle) aiUpdate(b *Ball) {
 // }
 
 type Ball struct {
-	sdl2utilities.Pos
+	gls.Pos
 	radius float32
 	xv     float32
 	yv     float32
-	tex    *sdl2utilities.Texture
+	tex    *gls.Texture
 }
 
 func NewBall(X, Y, xv, yv, radius float32) *Ball {
@@ -125,9 +124,9 @@ func NewBall(X, Y, xv, yv, radius float32) *Ball {
 
 		}
 	}
-	tex := sdl2utilities.NewTexture(int(w), int(h), int(w*4), pix)
+	tex := gls.NewTexture(int(w), int(h), int(w*4), pix)
 	return &Ball{
-		Pos:    sdl2utilities.Pos{X: X, Y: Y},
+		Pos:    gls.Pos{X: X, Y: Y},
 		xv:     xv,
 		yv:     yv,
 		tex:    tex,
@@ -187,18 +186,18 @@ func Lerp(l, r, p float32) float32 {
 }
 
 func main() {
-	player1 := NewPaddle(Lerp(0, float32(WindWidth), 0.05), Lerp(0, float32(WinHeight), 0.5), paddleSpeed, 20, 180, sdl2utilities.NewColor(255, 255, 255, 255))
-	aiplayer := NewPaddle(Lerp(0, float32(WindWidth), 0.95), Lerp(0, float32(WinHeight), 0.5), paddleSpeed, 20, 180, sdl2utilities.NewColor(255, 255, 255, 255))
+	player1 := NewPaddle(Lerp(0, float32(WindWidth), 0.05), Lerp(0, float32(WinHeight), 0.5), paddleSpeed, 20, 180, gls.NewColor(255, 255, 255, 255))
+	aiplayer := NewPaddle(Lerp(0, float32(WindWidth), 0.95), Lerp(0, float32(WinHeight), 0.5), paddleSpeed, 20, 180, gls.NewColor(255, 255, 255, 255))
 	ball := NewBall(100, 100, ballSpeedX, ballSpeedY, 10)
 
-	welcomeTextBox := sdl2utilities.NewTextBox(20, 15, 10)
+	welcomeTextBox := gls.NewTextBox(20, 15, 10)
 	welcomeTextBox.UpdateText("       WELCOME      #         TO         #        PONG        #  SPACE TO CONTINUE ")
 	welcomeTextBox.UpdateTexture()
-	pauseTextBox := sdl2utilities.NewTextBox(20, 15, 5)
+	pauseTextBox := gls.NewTextBox(20, 15, 5)
 	pauseTextBox.UpdateText("PAUSE")
 	pauseTextBox.UpdateTexture()
-	var s sdl2utilities.SDL
-	s.Init_Sdl(WindWidth, WinHeight)
+	var s gls.SDL
+	s.Init_Sdl(WindWidth, WinHeight,"PONG")
 	fps := 0
 	frames := 0
 	start := time.Now()
@@ -253,7 +252,7 @@ func main() {
 			ball.tex.DrawAlpha(ball.Pos, &s)
 			player1.tex.DrawAlpha(player1.Pos, &s)
 			aiplayer.tex.DrawAlpha(aiplayer.Pos, &s)
-			DrawText(fmt.Sprintf("FPS %d#SCORE %d", fps, int(curScore)), sdl2utilities.Pos{X: 15, Y: 15}, &s, 2)
+			DrawText(fmt.Sprintf("FPS %d#SCORE %d", fps, int(curScore)), gls.Pos{X: 15, Y: 15}, &s, 2)
 			if time.Since(start).Milliseconds() > 1000 {
 				if countdown > 0 && GameState == START {
 					countdown--
@@ -298,8 +297,8 @@ func GetDigits(number int) []byte {
 	return digits
 }
 
-func getCenter(winwidth, winheight int) sdl2utilities.Pos {
-	return sdl2utilities.Pos{
+func getCenter(winwidth, winheight int) gls.Pos {
+	return gls.Pos{
 		X: float32(winwidth / 2),
 		Y: float32(winheight / 2),
 	}
