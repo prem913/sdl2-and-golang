@@ -30,9 +30,12 @@ func main() {
 		return
 	}
 
-	var s gls.SDL
-	s.Init_Sdl(800, 800,"test")
 
+  s := gls.Init_Sdl(gls.SDLOptions{
+    WinH : 800,
+    WinW : 800,
+    WinName: "test",
+  })
 	// Read the frames from the output buffer
 	// for {
 

@@ -123,8 +123,11 @@ func tick(tex *gls.Texture) {
 }
 
 func main() {
-	var s gls.SDL
-  s.Init_Sdl(WindWidth, WinHeight,"Game of life")
+	s := gls.Init_Sdl(gls.SDLOptions{
+		WinW:    int32(WindWidth),
+		WinH:    int32(WinHeight),
+		WinName: "Game of life",
+	})
 	uni := universe(400, 400)
 	keyState := sdl.GetKeyboardState()
 
@@ -135,7 +138,7 @@ func main() {
 		}
 
 	}, func() {
-		uni.Draw(getCenter(), &s)
+		uni.Draw(getCenter(), s)
 		fmt.Printf("Generation : %d LiveCells : %d DeadCells : %d\r", generation, LiveCells, DeadCells)
 	})
 

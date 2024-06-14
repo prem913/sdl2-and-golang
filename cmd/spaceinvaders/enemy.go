@@ -40,8 +40,8 @@ func (e *enemy) update(delta float32,s *gls.SDL) {
     e.pos.X = float32(e.tex.W) /2
     e.speed = -e.speed
   }
-  if e.pos.X + float32(e.tex.W) / 2 > float32(s.WinWidth){
-    e.pos.X = float32(s.WinWidth - (e.tex.W) / 2)
+  if e.pos.X + float32(e.tex.W) / 2 > float32(s.WinW){
+    e.pos.X = float32(int(s.WinW) - (e.tex.W))/ 2
     e.speed = -e.speed
   }
   e.pos.X += (delta*e.speed)

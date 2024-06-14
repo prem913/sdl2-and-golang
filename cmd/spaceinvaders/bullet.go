@@ -80,7 +80,7 @@ func (b *Bullets) update(delta float32, s *gls.SDL) {
 	// remove bullets if bullet goes out of window or destroyed
 	newlist := make([]*Bullet, 0, 100)
 	for _, bullet := range b.list {
-		if bullet.pos.X+float32(bullet.tex.W)/2 < 0 || bullet.pos.X-float32(bullet.tex.W)/2 > float32(s.WinWidth) || bullet.pos.Y+float32(bullet.tex.H)/2 < 0 || bullet.pos.Y+float32(bullet.tex.H)/2 > float32(s.WinHeight) || bullet.destroyed {
+		if bullet.pos.X+float32(bullet.tex.W)/2 < 0 || bullet.pos.X-float32(bullet.tex.W)/2 > float32(s.WinW) || bullet.pos.Y+float32(bullet.tex.H)/2 < 0 || bullet.pos.Y+float32(bullet.tex.H)/2 > float32(s.WinH) || bullet.destroyed {
 			continue
 		}
 		newlist = append(newlist, bullet)

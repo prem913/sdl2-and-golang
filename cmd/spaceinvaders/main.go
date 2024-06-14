@@ -124,8 +124,11 @@ func (f *Framerate) run() {
 }
 
 func main() {
-	var s gls.SDL
-	s.Init_Sdl(WindWidth, WinHeight,"SPI")
+  s := gls.Init_Sdl(gls.SDLOptions{ 
+    WinW:WindWidth,
+    WinH:WinHeight,
+    WinName:"SPI",
+  })
 
 	keyState := sdl.GetKeyboardState()
 
@@ -148,28 +151,28 @@ func main() {
 		HandleEnemyBullets(enemies, texEnemyBullet)
 		HandlePlayerBullets(player, keyState, texs["bullet"])
 		player.update(delta, keyState)
-		enemies.update(delta, &s)
-		enemies.bullets.update(delta, &s)
-		player.bullets.update(delta, &s)
+		enemies.update(delta, s)
+		enemies.bullets.update(delta, s)
+		player.bullets.update(delta, s)
 
 	}, func() {
 		var wg sync.WaitGroup
 		wg.Add(4)
-			s.Clearscreen()
+			s.ClearScreen()
 		go func() {
-			player.tex.DrawAlpha(*player.pos, &s)
+			player.tex.DrawAlpha(*player.pos, s)
 			wg.Done()
 		}()
 		go func() {
-			enemies.draw(&s)
+			enemies.draw(s)
 			wg.Done()
 		}()
 		go func() {
-			enemies.bullets.draw(&s)
+			enemies.bullets.draw(s)
 			wg.Done()
 		}()
 		go func() {
-			player.bullets.draw(&s)
+			player.bullets.draw(s)
 			wg.Done()
 		}()
 

@@ -196,8 +196,11 @@ func main() {
 	pauseTextBox := gls.NewTextBox(20, 15, 5)
 	pauseTextBox.UpdateText("PAUSE")
 	pauseTextBox.UpdateTexture()
-	var s gls.SDL
-	s.Init_Sdl(WindWidth, WinHeight,"PONG")
+	s := gls.Init_Sdl(gls.SDLOptions{
+		WinW:    int32(WindWidth),
+		WinH:    int32(WinHeight),
+		WinName: "PONG",
+	})
 	fps := 0
 	frames := 0
 	start := time.Now()
@@ -242,17 +245,17 @@ func main() {
 
 	}, func() {
 		frames++
-		s.Clearscreen()
+		s.ClearScreen()
 		switch GameState {
 		case INIT:
-			// DrawText(fmt.Sprintf("  WELCOME #    TO    #   PONG   #HIGH SCORE %d", highScore), getCenter(WindWidth-200, WinHeight), &s, 3)
-			welcomeTextBox.Tex.Draw(getCenter(WindWidth, WinHeight), &s)
+			// DrawText(fmt.Sprintf("  WELCOME #    TO    #   PONG   #HIGH SCORE %d", highScore), getCenter(WindWidth-200, WinHeight), s, 3)
+			welcomeTextBox.Tex.Draw(getCenter(WindWidth, WinHeight), s)
 
 		case START:
-			ball.tex.DrawAlpha(ball.Pos, &s)
-			player1.tex.DrawAlpha(player1.Pos, &s)
-			aiplayer.tex.DrawAlpha(aiplayer.Pos, &s)
-			DrawText(fmt.Sprintf("FPS %d#SCORE %d", fps, int(curScore)), gls.Pos{X: 15, Y: 15}, &s, 2)
+			ball.tex.DrawAlpha(ball.Pos, s)
+			player1.tex.DrawAlpha(player1.Pos, s)
+			aiplayer.tex.DrawAlpha(aiplayer.Pos, s)
+			DrawText(fmt.Sprintf("FPS %d#SCORE %d", fps, int(curScore)), gls.Pos{X: 15, Y: 15}, s, 2)
 			if time.Since(start).Milliseconds() > 1000 {
 				if countdown > 0 && GameState == START {
 					countdown--
@@ -262,17 +265,17 @@ func main() {
 				start = time.Now()
 			}
 			if countdown > 0 {
-				DrawText(fmt.Sprint(countdown), getCenter(WindWidth, WinHeight), &s, 0)
+				DrawText(fmt.Sprint(countdown), getCenter(WindWidth, WinHeight), s, 0)
 			}
 		case GAMEOVER:
 			highScore = int(math.Max(float64(curScore), float64(highScore)))
-			DrawText(fmt.Sprintf("GAME OVER#SCORE %d", int(curScore)), getCenter(WindWidth-200, WinHeight), &s, 3)
+			DrawText(fmt.Sprintf("GAME OVER#SCORE %d", int(curScore)), getCenter(WindWidth-200, WinHeight), s, 3)
 			curScore = 0
 		case PAUSE:
-			DrawText(fmt.Sprintf("PAUSE#SCORE %d", int(curScore)), getCenter(WindWidth-200, WinHeight), &s, 3)
+			DrawText(fmt.Sprintf("PAUSE#SCORE %d", int(curScore)), getCenter(WindWidth-200, WinHeight), s, 3)
 			// pauseTextBox.UpdateText(fmt.Sprintf("       PAUSE        #HIGH SCORE : %d", int(curScore)))
 			// pauseTextBox.UpdateTexture()
-			// pauseTextBox.Tex.Draw(getCenter(WindWidth, WinHeight), &s)
+			// pauseTextBox.Tex.Draw(getCenter(WindWidth, WinHeight), s)
 		}
 
 	})

@@ -218,6 +218,7 @@ func resetGame(p *Pipes, b *Bird) {
 		p.pipes[i] = initpos
 	}
 	b.pos = getCenter()
+  b.speed = 0
 }
 
 type Background struct {
@@ -259,14 +260,17 @@ func (b *Background) draw(s *gls.SDL) {
 }
 
 func main() {
-	var s gls.SDL
-	s.Init_Sdl(WindWidth, WinHeight, "Flappy bird")
+  s:= gls.Init_Sdl(gls.SDLOptions{
+    WinW : int32(WindWidth),
+    WinH: int32(WinHeight),
+    WinName:"Flappy bird",
+  })
 
 	keyState := sdl.GetKeyboardState()
 	fps := NewFramerate()
 
 	bird := NewBird(getCenter(), 0.1, 0.1, 300, 300)
-	pipes := NewPipes(300, 400)
+	pipes := NewPipes(300, 2)
 	background := NewBackground(30)
 
 	texmap := loadAssets()
@@ -318,17 +322,17 @@ func main() {
 		fps.run()
 		switch gameState {
 		case INIT:
-			bgTex.Draw(bgpos, &s)
-			bird.draw(&s)
+			bgTex.Draw(bgpos, s)
+			bird.draw(s)
 			break
 		case START:
-			background.draw(&s)
-				bird.draw(&s)
-				pipes.draw(&s)
-				base.draw(&s)
+			background.draw(s)
+				bird.draw(s)
+				pipes.draw(s)
+				base.draw(s)
 			break
 		case GAMEOVER:
-			texmap["gameover"].DrawAlpha(getCenter(), &s)
+			texmap["gameover"].DrawAlpha(getCenter(), s)
 			break
 		}
 	})

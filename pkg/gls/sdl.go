@@ -10,12 +10,16 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 )
 
+type SDLOptions struct{
+  WinH ,WinW ,WinX ,WinY int32
+  WinName string
+}
+
 type SDL struct {
-	WinWidth  int
-	WinHeight int
-	window    *sdl.Window
-	renderer  *sdl.Renderer
-	tex       *sdl.Texture
+  SDLOptions
+	Window    *sdl.Window
+	Renderer  *sdl.Renderer
+	Tex       *sdl.Texture
 
 	mu     sync.RWMutex
 	Screen []byte
@@ -32,31 +36,39 @@ func NewPos(x, y float32) *Pos {
 	}
 }
 
-func (s *SDL) Init_Sdl(winWidth, winHeight int,windowname string) {
-	s.WinHeight = winHeight
-	s.WinWidth = winWidth
-	s.Screen = make([]byte, s.WinHeight*s.WinWidth*4)
+func Init_Sdl(options SDLOptions) *SDL{
 	err := sdl.Init(sdl.INIT_EVERYTHING)
 	if err != nil {
-		fmt.Println(err)
-		return
+    panic(err)
 	}
-	window, err := sdl.CreateWindow(windowname, sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, int32(winWidth), int32(winHeight), sdl.WINDOW_SHOWN)
+  var wposX int32 = sdl.WINDOWPOS_UNDEFINED
+  var wposY int32 = sdl.WINDOWPOS_UNDEFINED
+  if options.WinX != 0 && options.WinY != 0{
+    wposX = options.WinX
+    wposY = options.WinY
+  }
+	Window, err := sdl.CreateWindow(options.WinName, wposX, wposY, options.WinW, options.WinH, sdl.WINDOW_OPENGL)
 
 	if err != nil {
 		panic(err)
 	}
-	s.window = window
-	renderer, err := sdl.CreateRenderer(window, -1, sdl.RENDERER_ACCELERATED)
+	renderer, err := sdl.CreateRenderer(Window, -1, sdl.RENDERER_ACCELERATED)
 	if err != nil {
 		panic(err)
 	}
-	s.renderer = renderer
-	tex, err := renderer.CreateTexture(sdl.PIXELFORMAT_ABGR8888, sdl.TEXTUREACCESS_STREAMING, int32(winWidth), int32(winHeight))
+	tex, err := renderer.CreateTexture(sdl.PIXELFORMAT_ABGR8888, sdl.TEXTUREACCESS_STREAMING, options.WinW, options.WinH)
 	if err != nil {
 		panic(err)
 	}
-	s.tex = tex
+
+  Screen := make([]byte, options.WinH*options.WinW*4)
+  return &SDL{
+    SDLOptions : options,
+    Window:Window,
+    Tex:tex,
+    Renderer:renderer,
+    Screen:Screen,
+  }
 }
 
 type updatefunctype func(delta float32)
@@ -112,9 +124,9 @@ func (s *SDL) DrawScreen(updatefunc updatefunctype, drawfunc drawfunctype) {
 			return
 		}
 		frame := <-frames
-		s.tex.Update(nil, unsafe.Pointer(&frame[0]), s.WinWidth*4)
-		s.renderer.Copy(s.tex, nil, nil)
-		s.renderer.Present()
+		s.Tex.Update(nil, unsafe.Pointer(&frame[0]), int(s.WinW)*4)
+		s.Renderer.Copy(s.Tex, nil, nil)
+		s.Renderer.Present()
 
 	}
 }
@@ -147,7 +159,7 @@ func CopyTexture(tex *Texture) *Texture {
 //			s.Screen[index] = color
 //		}
 //	}
-func (s *SDL) Clearscreen() {
+func (s *SDL) ClearScreen() {
 	for i := range s.Screen {
 		s.Screen[i] = 0
 	}
@@ -183,16 +195,16 @@ func (tex *Texture) Draw(p Pos, s *SDL) {
 	for y := 0; y < tex.H; y++ {
 		for x := 0; x < tex.W; x++ {
 			// make origin center
-			screenY := y + int(p.Y) - tex.H/2
-			screenX := x + int(p.X) - tex.W/2
+			ScreenY := y + int(p.Y) - tex.H/2
+			ScreenX := x + int(p.X) - tex.W/2
 
-			if screenX >= 0 && screenX < s.WinWidth && screenY >= 0 && screenY < s.WinHeight {
+			if ScreenX >= 0 && ScreenX < int(s.WinW) && ScreenY >= 0 && ScreenY < int(s.WinH) {
 				texIndex := y*tex.Pitch + x*4
-				screenIndex := screenY*s.WinWidth*4 + screenX*4
-				s.Screen[screenIndex] = tex.Pixels[texIndex]
-				s.Screen[screenIndex+1] = tex.Pixels[texIndex+1]
-				s.Screen[screenIndex+2] = tex.Pixels[texIndex+2]
-				s.Screen[screenIndex+3] = tex.Pixels[texIndex+3]
+				ScreenIndex := ScreenY*int(s.WinW)*4 + ScreenX*4
+				s.Screen[ScreenIndex] = tex.Pixels[texIndex]
+				s.Screen[ScreenIndex+1] = tex.Pixels[texIndex+1]
+				s.Screen[ScreenIndex+2] = tex.Pixels[texIndex+2]
+				s.Screen[ScreenIndex+3] = tex.Pixels[texIndex+3]
 			}
 		}
 	}
@@ -201,26 +213,25 @@ func (tex *Texture) Draw(p Pos, s *SDL) {
 func (tex *Texture) DrawAlpha(p Pos, s *SDL) {
 	for y := 0; y < tex.H; y++ {
 		for x := 0; x < tex.W; x++ {
-			screenY := y + int(p.Y) - tex.H/2
-			screenX := x + int(p.X) - tex.W/2
+			ScreenY := y + int(p.Y) - tex.H/2
+			ScreenX := x + int(p.X) - tex.W/2
 
-			if screenX >= 0 && screenX < s.WinWidth && screenY >= 0 && screenY < s.WinHeight {
+			if ScreenX >= 0 && ScreenX < int(s.WinW) && ScreenY >= 0 && ScreenY < int(s.WinH) {
 				texIndex := y*tex.Pitch + x*4
-				screenIndex := screenY*s.WinWidth*4 + screenX*4
+				ScreenIndex := ScreenY*int(s.WinW)*4 + ScreenX*4
 
 				srcR, srcG, srcB, srcA := tex.Pixels[texIndex], tex.Pixels[texIndex+1], tex.Pixels[texIndex+2], tex.Pixels[texIndex+3]
 
-				dstR, dstG, dstB, _ := s.Screen[screenIndex], s.Screen[screenIndex+1], s.Screen[screenIndex+2], s.Screen[screenIndex+3]
+				dstR, dstG, dstB, _ := s.Screen[ScreenIndex], s.Screen[ScreenIndex+1], s.Screen[ScreenIndex+2], s.Screen[ScreenIndex+3]
 
 				rstR := (int(srcR)*255 + int(dstR)*(255-int(srcA))) / 255
 				rstG := (int(srcG)*255 + int(dstG)*(255-int(srcA))) / 255
 				rstB := (int(srcB)*255 + int(dstB)*(255-int(srcA))) / 255
 
-				s.Screen[screenIndex] = byte(rstR)
-				s.Screen[screenIndex+1] = byte(rstG)
-				s.Screen[screenIndex+2] = byte(rstB)
+				s.Screen[ScreenIndex] = byte(rstR)
+				s.Screen[ScreenIndex+1] = byte(rstG)
+				s.Screen[ScreenIndex+2] = byte(rstB)
 			}
-
 		}
 	}
 }
@@ -234,24 +245,24 @@ func (tex *Texture) DrawAlphaRotate(p Pos, deg float64, s *SDL) {
 			rx := int(math.Round(ox*math.Cos(rad) + oy*math.Sin(rad)))
 			ry := int(math.Round(oy*math.Cos(rad) - ox*math.Sin(rad)))
 
-			screenY := ry + int(py) - tex.H/2
-			screenX := rx + int(px) - tex.W/2
+			ScreenY := ry + int(py) - tex.H/2
+			ScreenX := rx + int(px) - tex.W/2
 
-			if screenX >= 0 && screenX < s.WinWidth && screenY >= 0 && screenY < s.WinHeight {
+			if ScreenX >= 0 && ScreenX < int(s.WinW) && ScreenY >= 0 && ScreenY < int(s.WinH) {
 				texIndex := y*tex.Pitch + x*4
-				screenIndex := screenY*s.WinWidth*4 + screenX*4
+				ScreenIndex := ScreenY*int(s.WinW)*4 + ScreenX*4
 
 				srcR, srcG, srcB, srcA := tex.Pixels[texIndex], tex.Pixels[texIndex+1], tex.Pixels[texIndex+2], tex.Pixels[texIndex+3]
 
-				dstR, dstG, dstB, _ := s.Screen[screenIndex], s.Screen[screenIndex+1], s.Screen[screenIndex+2], s.Screen[screenIndex+3]
+				dstR, dstG, dstB, _ := s.Screen[ScreenIndex], s.Screen[ScreenIndex+1], s.Screen[ScreenIndex+2], s.Screen[ScreenIndex+3]
 
 				rstR := (int(srcR)*255 + int(dstR)*(255-int(srcA))) / 255
 				rstG := (int(srcG)*255 + int(dstG)*(255-int(srcA))) / 255
 				rstB := (int(srcB)*255 + int(dstB)*(255-int(srcA))) / 255
 
-				s.Screen[screenIndex] = byte(rstR)
-				s.Screen[screenIndex+1] = byte(rstG)
-				s.Screen[screenIndex+2] = byte(rstB)
+				s.Screen[ScreenIndex] = byte(rstR)
+				s.Screen[ScreenIndex+1] = byte(rstG)
+				s.Screen[ScreenIndex+2] = byte(rstB)
 			}
 
 		}
@@ -264,24 +275,24 @@ func (tex *Texture) DrawAlphaScaled(p Pos, nw, nh int, s *SDL) {
 		for nx := 0; nx < nw; nx++ {
 			ox := fit(nx, ow, nw)
 			oy := fit(ny, oh, nh)
-			screenY := ny + int(p.Y) - nh/2
-			screenX := nx + int(p.X) - nw/2
+			ScreenY := ny + int(p.Y) - nh/2
+			ScreenX := nx + int(p.X) - nw/2
 
-			if screenX >= 0 && screenX < s.WinWidth && screenY >= 0 && screenY < s.WinHeight {
+			if ScreenX >= 0 && ScreenX < int(s.WinH) && ScreenY >= 0 && ScreenY < int(s.WinH) {
 				texIndex := oy*tex.Pitch + ox*4
-				screenIndex := screenY*s.WinWidth*4 + screenX*4
+				ScreenIndex := ScreenY*int(s.WinW)*4 + ScreenX*4
 
 				srcR, srcG, srcB, srcA := tex.Pixels[texIndex], tex.Pixels[texIndex+1], tex.Pixels[texIndex+2], tex.Pixels[texIndex+3]
 
-				dstR, dstG, dstB, _ := s.Screen[screenIndex], s.Screen[screenIndex+1], s.Screen[screenIndex+2], s.Screen[screenIndex+3]
+				dstR, dstG, dstB, _ := s.Screen[ScreenIndex], s.Screen[ScreenIndex+1], s.Screen[ScreenIndex+2], s.Screen[ScreenIndex+3]
 
 				rstR := (int(srcR)*255 + int(dstR)*(255-int(srcA))) / 255
 				rstG := (int(srcG)*255 + int(dstG)*(255-int(srcA))) / 255
 				rstB := (int(srcB)*255 + int(dstB)*(255-int(srcA))) / 255
 
-				s.Screen[screenIndex] = byte(rstR)
-				s.Screen[screenIndex+1] = byte(rstG)
-				s.Screen[screenIndex+2] = byte(rstB)
+				s.Screen[ScreenIndex] = byte(rstR)
+				s.Screen[ScreenIndex+1] = byte(rstG)
+				s.Screen[ScreenIndex+2] = byte(rstB)
 			}
 
 		}

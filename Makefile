@@ -12,6 +12,8 @@ runspi:
 	@go run ./cmd/spaceinvaders/
 runfp:
 	@go run ./cmd/flappy_birb/
+runwindow:
+	@go run ./cmd/pongwindow/
 
 
 test:
