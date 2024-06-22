@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"math/rand"
+	"sync"
 	"time"
 
 	gls "github.com/prem913/gl_go/pkg/gls"
@@ -25,9 +26,10 @@ const (
 )
 
 var (
-	gameState GameState = INIT
-	gravity   float32   = 600
-	score     float32   = 0
+	gameState  GameState = INIT
+	gravity    float32   = 800
+	score      float32   = 0
+	multiplier float32   = 0
 )
 
 type Bird struct {
@@ -73,7 +75,7 @@ func NewBird(pos gls.Pos, animspeed, jumpcd, boost, maxspeed float32) *Bird {
 	}
 }
 
-func (b *Bird) update(keyState []uint8, delta, gravity float32) {
+func (b *Bird) update(keyState []uint8, mouseState uint32, delta, gravity float32) {
 	// animate
 	b.animtime -= delta
 	if b.animtime <= 0 {
@@ -82,7 +84,7 @@ func (b *Bird) update(keyState []uint8, delta, gravity float32) {
 	}
 
 	b.jumptime -= delta
-	if b.jumptime <= 0 && keyState[sdl.SCANCODE_SPACE] != 0 {
+	if b.jumptime <= 0 && (keyState[sdl.SCANCODE_SPACE] != 0 || mouseState == 1) {
 		b.speed = -b.boost
 		if b.speed > b.maxspeed {
 			b.speed = b.maxspeed
@@ -169,9 +171,11 @@ func NewPipes(speed float32, count int) *Pipes {
 	}
 }
 
+var pp = float32(0)
+
 func (p *Pipes) update(delta float32) {
 	for i := 0; i < p.count; i++ {
-		p.pipes[i].X -= delta * p.speed
+		p.pipes[i].X -=  (p.speed + multiplier*10) * delta
 		if p.pipes[i].X < 0 {
 			var maxX float32 = 0
 			for j := 0; j < p.count; j++ {
@@ -197,20 +201,9 @@ func (p *Pipes) draw(s *gls.SDL) {
 	}
 }
 
-func Collisions(p *Pipes, b *Bird) {
-	for _, pipe := range p.pipes {
-		// top pipes
-		pw, ph, bw, bh := float32(p.upTex.W), float32(p.upTex.H), float32(b.texs[0].W), float32(b.texs[0].H)
-		if RectCollision(pipe.X, pipe.Y-ph, pw, ph, b.pos.X, b.pos.Y, bw, bh) || RectCollision(pipe.X, pipe.Y+ph, pw, ph, b.pos.X, b.pos.Y, bw, bh) {
-			gameState = GAMEOVER
-			fmt.Println("Score : ", score)
-		}
-
-	}
-}
-
 func resetGame(p *Pipes, b *Bird) {
 	score = 0
+	multiplier = 0
 	initpos := *gls.NewPos(0, 0)
 	for i := 0; i < p.count; i++ {
 		initpos.X += WindWidth / 2
@@ -218,7 +211,7 @@ func resetGame(p *Pipes, b *Bird) {
 		p.pipes[i] = initpos
 	}
 	b.pos = getCenter()
-  b.speed = 0
+	b.speed = 0
 }
 
 type Background struct {
@@ -259,12 +252,26 @@ func (b *Background) draw(s *gls.SDL) {
 	tex.Draw(pp, s)
 }
 
+func Collisions(p *Pipes, b *Bird) {
+	for _, pipe := range p.pipes {
+		// top pipes
+		pw, ph, bw, bh := float32(p.upTex.W), float32(p.upTex.H), float32(b.texs[0].W), float32(b.texs[0].H)
+		if RectCollision(pipe.X, pipe.Y-ph, pw, ph, b.pos.X, b.pos.Y, bw, bh) || RectCollision(pipe.X, pipe.Y+ph, pw, ph, b.pos.X, b.pos.Y, bw, bh) {
+			gameState = GAMEOVER
+		}
+	}
+  // if birb goes out of screen
+  if b.pos.Y > WinHeight{
+    gameState = GAMEOVER
+  }
+}
+
 func main() {
-  s:= gls.Init_Sdl(gls.SDLOptions{
-    WinW : int32(WindWidth),
-    WinH: int32(WinHeight),
-    WinName:"Flappy bird",
-  })
+	s := gls.Init_Sdl(gls.SDLOptions{
+		WinW:    int32(WindWidth),
+		WinH:    int32(WinHeight),
+		WinName: "Flappy bird",
+	})
 
 	keyState := sdl.GetKeyboardState()
 	fps := NewFramerate()
@@ -274,18 +281,21 @@ func main() {
 	background := NewBackground(30)
 
 	texmap := loadAssets()
-
+	nummap := LoadNumberAssets()
+	numpos := gls.NewPos(0, 20)
+	gameovernumpos := getCenter()
+	gameovernumpos.Y += float32(texmap["gameover"].W)
 	bgTex := texmap["background"]
 	bgTex.Scale(int(float32(bgTex.W)*1.8), int(float32(bgTex.H)*1.8))
 	bgpos := *gls.NewPos(WindWidth/2, WinHeight-float32(bgTex.H/2))
-	fmt.Println(bgTex.W, bgTex.H)
 
 	base := NewBase(300)
 
-	clickcd := float32(0)
+	presscd := float32(0)
 
 	s.DrawScreen(func(delta float32) {
-		if clickcd <= 0 {
+		_, _, mouseState := sdl.GetMouseState()
+		if presscd <= 0 {
 			if keyState[sdl.SCANCODE_SPACE] != 0 {
 				switch gameState {
 				case INIT:
@@ -299,23 +309,37 @@ func main() {
 					gameState = START
 					break
 				}
+				presscd = 0.2
 			}
-			clickcd -= 0.2
 		} else {
-			clickcd -= delta
+			presscd -= delta
 		}
 
 		switch gameState {
 		case START:
-			score += delta
+			multiplier += delta
+			score += multiplier * delta
+
+			var wg sync.WaitGroup
+			wg.Add(2)
+
 			go func() {
+				defer func() {
+					wg.Done()
+				}()
 				Collisions(pipes, bird)
 			}()
 
-			bird.update(keyState, delta, gravity)
-			pipes.update(delta)
-			base.update(delta)
-			background.update(delta)
+			go func() {
+				defer func() {
+					wg.Done()
+				}()
+				bird.update(keyState, mouseState, delta, gravity)
+				pipes.update(delta)
+				base.update(delta)
+				background.update(delta)
+			}()
+			wg.Wait()
 			break
 		}
 	}, func() {
@@ -325,14 +349,20 @@ func main() {
 			bgTex.Draw(bgpos, s)
 			bird.draw(s)
 			break
-		case START:
-			background.draw(s)
-				bird.draw(s)
-				pipes.draw(s)
-				base.draw(s)
-			break
 		case GAMEOVER:
 			texmap["gameover"].DrawAlpha(getCenter(), s)
+		case START:
+			background.draw(s)
+			bird.draw(s)
+			pipes.draw(s)
+			base.draw(s)
+			scorepos := *numpos
+			origin := false
+			if gameState == GAMEOVER {
+				scorepos = gameovernumpos
+				origin = true
+			}
+			DrawNumber(nummap, int(score), scorepos, s, origin)
 			break
 		}
 	})
@@ -399,4 +429,38 @@ func (f *Framerate) run() {
 		f.start = time.Now()
 	}
 	fmt.Printf("fps : %.1f \r", f.frames)
+}
+
+func LoadNumberAssets() map[byte]*gls.Texture {
+	var err error
+	texmap := make(map[byte]*gls.Texture)
+	for i := byte(0); i < 10; i++ {
+		texmap[i], err = gls.LoadImageTexture(fmt.Sprintf("./cmd/flappy_birb/assets/%d.png", i))
+	}
+	if err != nil {
+		panic("Unable to load assets")
+	}
+	return texmap
+}
+
+// origin = true ? center : start
+func DrawNumber(mp map[byte]*gls.Texture, num int, pos gls.Pos, s *gls.SDL, origin bool) {
+	digits := make([]byte, 0, 4)
+	for num != 0 {
+		digits = append(digits, byte(num%10))
+		num /= 10
+	}
+	l := len(digits)
+	padding := 5
+	w := l * (padding + mp[0].W)
+	var rx int
+	if origin {
+		rx = int(pos.X) + w/2
+	} else {
+		rx = int(pos.X) + w - mp[0].W + padding
+	}
+	for _, d := range digits {
+		mp[d].DrawAlpha(*gls.NewPos(float32(rx), pos.Y), s)
+		rx -= mp[0].W + padding
+	}
 }

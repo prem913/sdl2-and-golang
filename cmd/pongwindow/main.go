@@ -16,21 +16,21 @@ func main() {
 		WinX:    1,
 		WinY:    1,
 	})
-  // sdl.CreateWindow("2",100,100,40,40,sdl.WINDOW_SHOWN)
-  context ,_:= s.Window.GLCreateContext()
-  defer sdl.GLDeleteContext(context)
-  if err := gl.Init(); err != nil{
-    panic(err)
-  }
-  	gl.Enable(gl.DEPTH_TEST)
+	// sdl.CreateWindow("2",100,100,40,40,sdl.WINDOW_SHOWN)
+	context, _ := s.Window.GLCreateContext()
+	defer sdl.GLDeleteContext(context)
+	if err := gl.Init(); err != nil {
+		panic(err)
+	}
+	gl.Enable(gl.DEPTH_TEST)
 	gl.ClearColor(0.2, 0.2, 0.3, 1.0)
 	gl.ClearDepth(1)
 	gl.DepthFunc(gl.LEQUAL)
 	gl.Viewport(0, 0, int32(800), int32(800))
 
-  running := true
+	running := true
 	for running {
-    for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 			switch t := event.(type) {
 			case *sdl.QuitEvent:
 				running = false
@@ -44,6 +44,7 @@ func main() {
 }
 func drawgl() {
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+	gl.ClearColor(0.2, 0.3, 0.3, 1.0)
 
 	gl.Begin(gl.TRIANGLES)
 	gl.Color3f(1.0, 0.0, 0.0)
@@ -51,6 +52,8 @@ func drawgl() {
 	gl.Color3f(0.0, 1.0, 0.0)
 	gl.Vertex2f(-0.5, -0.5)
 	gl.Color3f(0.0, 0.0, 1.0)
+	gl.Vertex2f(-0.5, 0.5)
+	gl.Color3f(0.2, 0.0, 1.0)
 	gl.Vertex2f(-0.5, 0.5)
 	gl.End()
 }

@@ -10,16 +10,17 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 )
 
-type SDLOptions struct{
-  WinH ,WinW ,WinX ,WinY int32
-  WinName string
+type SDLOptions struct {
+	WinH, WinW, WinX, WinY int32
+	WinName                string
+	onMouseMove            func(event *sdl.MouseMotionEvent)
 }
 
 type SDL struct {
-  SDLOptions
-	Window    *sdl.Window
-	Renderer  *sdl.Renderer
-	Tex       *sdl.Texture
+	SDLOptions
+	Window   *sdl.Window
+	Renderer *sdl.Renderer
+	Tex      *sdl.Texture
 
 	mu     sync.RWMutex
 	Screen []byte
@@ -36,17 +37,17 @@ func NewPos(x, y float32) *Pos {
 	}
 }
 
-func Init_Sdl(options SDLOptions) *SDL{
+func Init_Sdl(options SDLOptions) *SDL {
 	err := sdl.Init(sdl.INIT_EVERYTHING)
 	if err != nil {
-    panic(err)
+		panic(err)
 	}
-  var wposX int32 = sdl.WINDOWPOS_UNDEFINED
-  var wposY int32 = sdl.WINDOWPOS_UNDEFINED
-  if options.WinX != 0 && options.WinY != 0{
-    wposX = options.WinX
-    wposY = options.WinY
-  }
+	var wposX int32 = sdl.WINDOWPOS_UNDEFINED
+	var wposY int32 = sdl.WINDOWPOS_UNDEFINED
+	if options.WinX != 0 && options.WinY != 0 {
+		wposX = options.WinX
+		wposY = options.WinY
+	}
 	Window, err := sdl.CreateWindow(options.WinName, wposX, wposY, options.WinW, options.WinH, sdl.WINDOW_OPENGL)
 
 	if err != nil {
@@ -60,15 +61,19 @@ func Init_Sdl(options SDLOptions) *SDL{
 	if err != nil {
 		panic(err)
 	}
-
-  Screen := make([]byte, options.WinH*options.WinW*4)
-  return &SDL{
-    SDLOptions : options,
-    Window:Window,
-    Tex:tex,
-    Renderer:renderer,
-    Screen:Screen,
-  }
+	if options.onMouseMove == nil {
+		options.onMouseMove = func(t *sdl.MouseMotionEvent) {
+			// fmt.Printf("[%d ms] MouseMotion\tid:%d\tx:%d\ty:%d\txrel:%d\tyrel:%d\n", t.Timestamp, t.Which, t.X, t.Y, t.XRel, t.YRel)
+		}
+	}
+	Screen := make([]byte, options.WinH*options.WinW*4)
+	return &SDL{
+		SDLOptions: options,
+		Window:     Window,
+		Tex:        tex,
+		Renderer:   renderer,
+		Screen:     Screen,
+	}
 }
 
 type updatefunctype func(delta float32)
@@ -77,7 +82,7 @@ type drawfunctype func()
 func (s *SDL) DrawScreen(updatefunc updatefunctype, drawfunc drawfunctype) {
 	stop := false
 
-	frames := make(chan []byte,50)
+	frames := make(chan []byte)
 
 	var frameStart time.Time
 	var elapsedTime float32
@@ -96,10 +101,13 @@ func (s *SDL) DrawScreen(updatefunc updatefunctype, drawfunc drawfunctype) {
 		for {
 			frameStart = time.Now()
 			for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
-				switch event.(type) {
+				switch t := event.(type) {
 				case *sdl.QuitEvent:
 					return
-
+				case *sdl.MouseMotionEvent:
+					s.onMouseMove(t)
+        case *sdl.MouseButtonEvent:
+          fmt.Println(t)
 				}
 			}
 			updatefunc(elapsedTime)
